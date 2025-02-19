@@ -35,10 +35,13 @@ int count = 0;
 #define SEGWAY_RANGE ((long)SEGWAY_LEFT - SEGWAY_RIGHT)
 #define SEGWAY_MIN  SEGWAY_RIGHT
 
-#define NINEBOT_LEFT  2900
-#define NINEBOT_CENTER  2300
-#define NINEBOT_RIGHT  1700
-#define NINEBOT_RANGE ((long)NINEBOT_LEFT - NINEBOT_RIGHT)
+// NMV = "nominal millivolts"
+// Steering sensor voltages determined empirically when powered by the Ninebot at 4.6 volts
+#define NINEBOT_VOLTAGE_NMV  4600
+#define NINEBOT_LEFT_NMV  2900
+#define NINEBOT_CENTER_NMV  2300
+#define NINEBOT_RIGHT_NMV  1700
+#define NINEBOT_RANGE_NMV ((long)NINEBOT_LEFT_NMV - NINEBOT_RIGHT_NMV)
 
 DFRobot_MCP4725 DAC;
 
@@ -47,7 +50,7 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
-  DAC.init(MCP4725A0_IIC_Address0, MCP4725_REF_VOLTAGE);
+  DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
 
   delay(2000);
 
@@ -63,17 +66,11 @@ int convertSegwaySensorVoltageToNinebot(int segwaySensor) {
 
   // Convert to Left=1000, Right=0
   long scaled = (((long)segwaySensor - SEGWAY_MIN) * 1000) / SEGWAY_RANGE;
-  Serial.print("scaled: ");
-    Serial.print(String(scaled, 10));
 
-  // long t = ((scaled * NINEBOT_RANGE) / 1000) + NINEBOT_LEFT;
-  long t = (scaled * NINEBOT_RANGE);
-  Serial.print(", t: ");
-    Serial.print(String(t, 10));
+  // long t = ((scaled * NINEBOT_RANGE_NMV) / 1000) + NINEBOT_RIGHT_NMV;
+  long t = (scaled * NINEBOT_RANGE_NMV);
   long t2 = t / 1000;
-  Serial.print(", t2: ");
-    Serial.println(String(t2, 10));
-return t2 + NINEBOT_RIGHT;
+  return t2 + NINEBOT_RIGHT_NMV;
 }
 
 // the loop function runs over and over again forever
