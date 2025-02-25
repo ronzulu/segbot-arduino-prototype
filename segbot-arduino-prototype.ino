@@ -28,6 +28,9 @@ int sensorPin = A0;   // select the input pin for the potentiometer
 int sensorValue = 0;  // variable to store the value coming from the sensor
 int analogOutput = 0;
 int count = 0;
+unsigned long previousMillis = 0;
+bool ledState = LOW;
+
 #define  MCP4725_REF_VOLTAGE    5000
 #define SEGWAY_LEFT   811
 #define SEGWAY_CENTER   511
@@ -55,7 +58,7 @@ void setup() {
 
   delay(2000);
 
-  Serial.println("segbot-arduino-prototype: v2");
+  Serial.println("segbot-arduino-prototype: v3");
 }
 
 // 
@@ -74,24 +77,32 @@ int convertSegwaySensorVoltageToNinebot(int segwaySensor) {
   return t2 + NINEBOT_MIN_NMV;
 }
 
-// the loop function runs over and over again forever
-void loop() {
-  sensorValue = analogRead(sensorPin);
-  analogOutput = convertSegwaySensorVoltageToNinebot(sensorValue);
+void flashLight() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= 1000) {
+    previousMillis = currentMillis;  // Remember the time
 
-  digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-  DAC.outputVoltage(analogOutput);
+    ledState = !ledState;            // Toggle the LED state
+    digitalWrite(LED_BUILTIN, ledState);
+  }
+}
+
+void printDebugInfo(int sensorValue, int analogOutput) {
   Serial.print("Count: A: ");
   Serial.print(String(count++, 10));
   Serial.print(", Input: ");
   Serial.print(String(sensorValue, 10));
   Serial.print(", Output: ");
   Serial.println(String(analogOutput, 10));
+}
 
-  delay(1000);                      // wait for a second
+// the loop function runs over and over again forever
+void loop() {
 
-  digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-  // DAC.outputVoltage(3500);
+  sensorValue = analogRead(sensorPin);
+  analogOutput = convertSegwaySensorVoltageToNinebot(sensorValue);
+  DAC.outputVoltage(analogOutput);
 
-  delay(1000);                      // wait for a second
+  flashLight();
+  printDebugInfo(sensorValue, analogOutput);
 }
