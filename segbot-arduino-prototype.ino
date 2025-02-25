@@ -41,6 +41,7 @@ int count = 0;
 #define NINEBOT_LEFT_NMV  2900
 #define NINEBOT_CENTER_NMV  2300
 #define NINEBOT_RIGHT_NMV  1700
+#define NINEBOT_MIN_NMV  NINEBOT_RIGHT_NMV
 #define NINEBOT_RANGE_NMV ((long)NINEBOT_LEFT_NMV - NINEBOT_RIGHT_NMV)
 
 DFRobot_MCP4725 DAC;
@@ -70,7 +71,7 @@ int convertSegwaySensorVoltageToNinebot(int segwaySensor) {
   // long t = ((scaled * NINEBOT_RANGE_NMV) / 1000) + NINEBOT_RIGHT_NMV;
   long t = (scaled * NINEBOT_RANGE_NMV);
   long t2 = t / 1000;
-  return t2 + NINEBOT_RIGHT_NMV;
+  return t2 + NINEBOT_MIN_NMV;
 }
 
 // the loop function runs over and over again forever
