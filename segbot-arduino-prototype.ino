@@ -38,14 +38,19 @@ bool ledState = LOW;
 #define SEGWAY_RANGE ((long)SEGWAY_LEFT - SEGWAY_RIGHT)
 #define SEGWAY_MIN  SEGWAY_RIGHT
 
+// 
+#define NINEBOT_USABLE_STEERING_RIGHT_PERCENT  30
+
 // NMV = "nominal millivolts"
 // Steering sensor voltages determined empirically when powered by the Ninebot at 4.6 volts
 #define NINEBOT_VOLTAGE_NMV  4600
-#define NINEBOT_LEFT_NMV  2900
+#define NINEBOT_CENTRE_TO_END_FULL_DELTA_NMV  600
+#define NINEBOT_USABLE_CENTER_TO_END_DELTA_NMV  ((long)NINEBOT_CENTRE_TO_END_FULL_DELTA_NMV * NINEBOT_USABLE_STEERING_RIGHT_PERCENT / 100)
 #define NINEBOT_CENTER_NMV  2300
-#define NINEBOT_RIGHT_NMV  1700
+#define NINEBOT_LEFT_NMV  NINEBOT_CENTER_NMV + NINEBOT_USABLE_CENTER_TO_END_DELTA_NMV
+#define NINEBOT_RIGHT_NMV  NINEBOT_CENTER_NMV - NINEBOT_USABLE_CENTER_TO_END_DELTA_NMV
 #define NINEBOT_MIN_NMV  NINEBOT_RIGHT_NMV
-#define NINEBOT_RANGE_NMV ((long)NINEBOT_LEFT_NMV - NINEBOT_RIGHT_NMV)
+#define NINEBOT_RANGE_NMV (NINEBOT_USABLE_CENTER_TO_END_DELTA_NMV * 2)
 
 DFRobot_MCP4725 DAC;
 
@@ -58,7 +63,7 @@ void setup() {
 
   delay(2000);
 
-  Serial.println("segbot-arduino-prototype: v3.1");
+  Serial.println("segbot-arduino-prototype: v3.2");
 }
 
 // 
