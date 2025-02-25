@@ -53,12 +53,12 @@ DFRobot_MCP4725 DAC;
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(38400);
   DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
 
   delay(2000);
 
-  Serial.println("segbot-arduino-prototype: v3");
+  Serial.println("segbot-arduino-prototype: v3.1");
 }
 
 // 
@@ -77,23 +77,21 @@ int convertSegwaySensorVoltageToNinebot(int segwaySensor) {
   return t2 + NINEBOT_MIN_NMV;
 }
 
-void flashLight() {
+void printDebugInfo(int sensorValue, int analogOutput) {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= 1000) {
     previousMillis = currentMillis;  // Remember the time
 
     ledState = !ledState;            // Toggle the LED state
     digitalWrite(LED_BUILTIN, ledState);
+    
+    Serial.print("Count: A: ");
+    Serial.print(String(count++, 10));
+    Serial.print(", Input: ");
+    Serial.print(String(sensorValue, 10));
+    Serial.print(", Output: ");
+    Serial.println(String(analogOutput, 10));
   }
-}
-
-void printDebugInfo(int sensorValue, int analogOutput) {
-  Serial.print("Count: A: ");
-  Serial.print(String(count++, 10));
-  Serial.print(", Input: ");
-  Serial.print(String(sensorValue, 10));
-  Serial.print(", Output: ");
-  Serial.println(String(analogOutput, 10));
 }
 
 // the loop function runs over and over again forever
@@ -103,6 +101,5 @@ void loop() {
   analogOutput = convertSegwaySensorVoltageToNinebot(sensorValue);
   DAC.outputVoltage(analogOutput);
 
-  flashLight();
   printDebugInfo(sensorValue, analogOutput);
 }
