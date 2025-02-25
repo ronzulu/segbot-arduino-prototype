@@ -39,7 +39,7 @@ bool ledState = LOW;
 #define SEGWAY_MIN  SEGWAY_RIGHT
 
 // 
-#define NINEBOT_USABLE_STEERING_RIGHT_PERCENT  30
+#define NINEBOT_USABLE_STEERING_RIGHT_PERCENT  60
 
 // NMV = "nominal millivolts"
 // Steering sensor voltages determined empirically when powered by the Ninebot at 4.6 volts
@@ -61,9 +61,9 @@ void setup() {
   Serial.begin(38400);
   DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
 
-  delay(2000);
+  Serial.println("segbot-arduino-prototype: v3.3");
 
-  Serial.println("segbot-arduino-prototype: v3.2");
+  delay(2000);
 }
 
 // 
