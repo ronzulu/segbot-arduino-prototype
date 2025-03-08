@@ -75,7 +75,7 @@ void setup() {
 
   DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
 
-  Serial.println("segbot-arduino-prototype: v3.4");
+  Serial.println("segbot-arduino-prototype: v3.5");
 
   delay(2000);
 }
@@ -110,8 +110,10 @@ int waitForSteeringControlCenter(int niceifiedSegwaySensorValue) {
   if (v < NINEBOT_MAX_STARTUP_CENTER_DEVIATION_PERCENT * 10)
     segbotMode = SEGBOT_MODE_NORMAL;
 
-  // Whilst waiting for the steering control to be manually turned to the central position, we want the Ninebot to stay in position and not turn left or right
-  return NINEBOT_CENTER_NMV;
+  // Whilst waiting for the steering control to be manually turned to the central position, we output 0 volts
+  // the Ninebot isn't happy that it's receiving this value (outside of the hall effect sensor's expected range) and
+  // beeps - which is the desired outcome. This alerts the user to the need to adjust the steering control to its central position
+  return 0;
 }
 
 void printDebugInfo(int sensorValue, int analogOutput) {
