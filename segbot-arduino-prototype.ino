@@ -26,20 +26,29 @@
 
 int sensorPin = A0;   // select the input pin for the potentiometer
 int sensorValue = 0;  // variable to store the value coming from the sensor
+
+// Niceified: Full Left=1000, Full Right=0
+int niceifiedSegwaySensorValue = 0;
+
 int analogOutput = 0;
 int count = 0;
 unsigned long previousMillis = 0;
 bool ledState = LOW;
 
-#define  MCP4725_REF_VOLTAGE    5000
+#define MCP4725_REF_VOLTAGE    5000
 #define SEGWAY_LEFT   811
 #define SEGWAY_CENTER   511
 #define SEGWAY_RIGHT   211
 #define SEGWAY_RANGE ((long)SEGWAY_LEFT - SEGWAY_RIGHT)
 #define SEGWAY_MIN  SEGWAY_RIGHT
 
+#define NICEIFIED_STEERING_FULL_LEFT 1000
+#define NICEIFIED_STEERING_FULL_RIGHT  0
+#define NICEIFIED_STEERING_CENTER  ((NICEIFIED_STEERING_FULL_LEFT - NICEIFIED_STEERING_FULL_RIGHT) / 2)
+
 // 
 #define NINEBOT_USABLE_STEERING_RIGHT_PERCENT  60
+#define NINEBOT_MAX_STARTUP_CENTER_DEVIATION_PERCENT  3
 
 // NMV = "nominal millivolts"
 // Steering sensor voltages determined empirically when powered by the Ninebot at 4.6 volts
@@ -52,6 +61,10 @@ bool ledState = LOW;
 #define NINEBOT_MIN_NMV  NINEBOT_RIGHT_NMV
 #define NINEBOT_RANGE_NMV (NINEBOT_USABLE_CENTER_TO_END_DELTA_NMV * 2)
 
+#define SEGBOT_MODE_AWAITING_STEERING_CENTER  0
+#define SEGBOT_MODE_NORMAL  1
+int segbotMode = SEGBOT_MODE_AWAITING_STEERING_CENTER;
+
 DFRobot_MCP4725 DAC;
 
 // the setup function runs once when you press reset or power the board
@@ -59,27 +72,46 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(38400);
+
   DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
 
-  Serial.println("segbot-arduino-prototype: v3.3");
+  Serial.println("segbot-arduino-prototype: v3.4");
 
   delay(2000);
 }
 
+
+
 // 
-int convertSegwaySensorVoltageToNinebot(int segwaySensor) {
+int niceifySegwaySensorValue(int segwaySensor) {
   if (segwaySensor < SEGWAY_RIGHT)
     segwaySensor = SEGWAY_RIGHT;
   else if (segwaySensor > SEGWAY_LEFT)
     segwaySensor = SEGWAY_LEFT;
 
-  // Convert to Left=1000, Right=0
-  long scaled = (((long)segwaySensor - SEGWAY_MIN) * 1000) / SEGWAY_RANGE;
+  // Convert to Full Left=1000, Full Right=0
+  long niceified = (((long)segwaySensor - SEGWAY_MIN) * 1000) / SEGWAY_RANGE;
+  return (int)niceified;
+}
 
-  // long t = ((scaled * NINEBOT_RANGE_NMV) / 1000) + NINEBOT_RIGHT_NMV;
-  long t = (scaled * NINEBOT_RANGE_NMV);
+// 
+int convertSegwaySensorValueToNinebot(int niceifiedSegwaySensorValue) {
+
+  long t = (niceifiedSegwaySensorValue * NINEBOT_RANGE_NMV);
   long t2 = t / 1000;
   return t2 + NINEBOT_MIN_NMV;
+}
+
+// 
+int waitForSteeringControlCenter(int niceifiedSegwaySensorValue) {
+  int v = niceifiedSegwaySensorValue - NICEIFIED_STEERING_CENTER;
+  if (v < 0)
+    v = -v;
+  if (v < NINEBOT_MAX_STARTUP_CENTER_DEVIATION_PERCENT * 10)
+    segbotMode = SEGBOT_MODE_NORMAL;
+
+  // Whilst waiting for the steering control to be manually turned to the central position, we want the Ninebot to stay in position and not turn left or right
+  return NINEBOT_CENTER_NMV;
 }
 
 void printDebugInfo(int sensorValue, int analogOutput) {
@@ -90,8 +122,10 @@ void printDebugInfo(int sensorValue, int analogOutput) {
     ledState = !ledState;            // Toggle the LED state
     digitalWrite(LED_BUILTIN, ledState);
     
-    Serial.print("Count: A: ");
+    Serial.print("A: Count: ");
     Serial.print(String(count++, 10));
+    Serial.print(", Mode: ");
+    Serial.print(String(segbotMode, 10));
     Serial.print(", Input: ");
     Serial.print(String(sensorValue, 10));
     Serial.print(", Output: ");
@@ -103,8 +137,13 @@ void printDebugInfo(int sensorValue, int analogOutput) {
 void loop() {
 
   sensorValue = analogRead(sensorPin);
-  analogOutput = convertSegwaySensorVoltageToNinebot(sensorValue);
+  niceifiedSegwaySensorValue = niceifySegwaySensorValue(sensorValue);
+  if (segbotMode == SEGBOT_MODE_AWAITING_STEERING_CENTER)
+    analogOutput = waitForSteeringControlCenter(niceifiedSegwaySensorValue);
+  else
+    analogOutput = convertSegwaySensorValueToNinebot(niceifiedSegwaySensorValue);
+
   DAC.outputVoltage(analogOutput);
 
-  printDebugInfo(sensorValue, analogOutput);
+  printDebugInfo(niceifiedSegwaySensorValue, analogOutput);
 }
