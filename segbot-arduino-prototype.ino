@@ -48,7 +48,7 @@ bool ledState = LOW;
 
 // 
 #define NINEBOT_USABLE_STEERING_RIGHT_PERCENT  60
-#define NINEBOT_MAX_STARTUP_CENTER_DEVIATION_PERCENT  3
+#define NINEBOT_MAX_STARTUP_CENTER_DEVIATION_PERCENT  6
 
 // NMV = "nominal millivolts"
 // Steering sensor voltages determined empirically when powered by the Ninebot at 4.6 volts
@@ -74,8 +74,7 @@ void setup() {
   Serial.begin(38400);
 
   DAC.init(MCP4725A0_IIC_Address0, NINEBOT_VOLTAGE_NMV);
-
-  Serial.println("segbot-arduino-prototype: v3.5");
+  Serial.println("segbot-arduino-prototype: v3.6");
 
   delay(2000);
 }
@@ -118,7 +117,7 @@ int waitForSteeringControlCenter(int niceifiedSegwaySensorValue) {
 
 void printDebugInfo(int sensorValue, int analogOutput) {
   unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= 1000) {
+  if (currentMillis - previousMillis >= 3000) {
     previousMillis = currentMillis;  // Remember the time
 
     ledState = !ledState;            // Toggle the LED state
